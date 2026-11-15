@@ -17,11 +17,17 @@ class MuseumRepoImpl @Inject constructor(
 
     private val TAG = "MuseumRepoImpl"
     override suspend fun fetchMuseumItems(query: String, page: Int): List<MuseumItem> {
-        return museumItemSearchApi.search(query, offset = page, limit = 20).objectIDs.map { objectId ->
+        return museumItemSearchApi.search(query, offset = page, limit = 20).objectIDs.mapNotNull { objectId ->
             Log.d(TAG, "Fetching item with ID: $objectId")
-            val museumItem = museumApi.getMuseumItemById(objectId).toDomain()
-            Log.d(TAG, "Fetched item: ${museumItem.thumbnailUrl}")
-            museumItem
+            try {
+                val museumItem = museumApi.getMuseumItemById(objectId).toDomain()
+                Log.d(TAG, "Fetched item: ${museumItem.thumbnailUrl}")
+                museumItem
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching item with ID: $objectId", e)
+                null
+            }
+
         }.filter { it.thumbnailUrl.isNotEmpty() }
     }
 

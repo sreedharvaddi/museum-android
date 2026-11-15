@@ -16,16 +16,17 @@ import javax.inject.Inject
 @HiltViewModel
 class MuseumListViewModel @Inject constructor(private val museumRepo: MuseumRepo) : ViewModel() {
     sealed class Event {
-        object LoadMuseumItems : Event()
+        data class LoadMuseumItems(val query: String = "temples") : Event()
+        object SearchClicked : Event()
     }
     val events = Channel<Event>(Channel.UNLIMITED)
     sealed class State {
-        object Idle : State()
+        class Idle(val museumItems: List<MuseumItem> = emptyList()) : State()
         object Loading : State()
         data class Success(val museumItems: List<MuseumItem>) : State()
         data class Error(val message: String) : State()
     }
-    var state = mutableStateOf<State>(State.Idle)
+    var state = mutableStateOf<State>(State.Idle())
         private set
 
     init {
@@ -39,14 +40,19 @@ class MuseumListViewModel @Inject constructor(private val museumRepo: MuseumRepo
 
     private fun handleEvent(event: Event) {
         when (event) {
-            is Event.LoadMuseumItems -> loadMuseumItems()
+            is Event.LoadMuseumItems -> loadMuseumItems(event.query)
+            Event.SearchClicked -> {
+                if (state.value is State.Success) {
+                    state.value = State.Idle((state.value as State.Success).museumItems)
+                }
+            }
         }
     }
-    fun loadMuseumItems() {
+    fun loadMuseumItems(query: String) {
         state.value = State.Loading
         viewModelScope.launch {
             try {
-                val museumItems = museumRepo.fetchMuseumItems(query = "temples", page = 1)
+                val museumItems = museumRepo.fetchMuseumItems(query = query, page = 1)
                 state.value = State.Success(museumItems)
             } catch (e: Exception) {
                 state.value = State.Error(e.message ?: "Unknown error")
