@@ -24,6 +24,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.sree.museum.R
 import com.sree.museum.domain.model.MuseumItem
@@ -32,12 +34,12 @@ import com.sree.museum.ui.nav.Destination
 @Composable
 fun MuseumListScreen(
     navController: NavController,
-    museumItems: List<MuseumItem> = emptyList(),
+    museumItems: LazyPagingItems<MuseumItem>,
     onSearchClicked: () -> Unit = {},
     isGridLayout : Boolean = false
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        if (museumItems.isEmpty()) {
+        if (museumItems.itemCount == 0) {
             Image(
                 painter = painterResource( R.drawable.museum_splash_screen),
                 contentDescription = null,
@@ -50,15 +52,20 @@ fun MuseumListScreen(
                     columns = GridCells.Adaptive(100.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(museumItems) {
-                        MuseumItemCard(
-                            museumItem = it,
-                            onItemClicked = {
-                                val route =
-                                    Destination.Detail.createRoute(path = it.primaryImageUrl)
-                                navController.navigate(route = route)
-                            }
-                        )
+                    items(
+                        count = museumItems.itemCount,
+                        key = museumItems.itemKey { it.id }
+                    ) { index ->
+                        museumItems[index]?.let {
+                            MuseumItemCard(
+                                museumItem = it,
+                                onItemClicked = {
+                                    val route =
+                                        Destination.Detail.createRoute(path = it.primaryImageUrl)
+                                    navController.navigate(route = route)
+                                }
+                            )
+                        }
                     }
                 }
             } else {
@@ -68,15 +75,20 @@ fun MuseumListScreen(
                     state = rememberedLazyListState,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(museumItems) {
-                        MuseumItemCard(
-                            museumItem = it,
-                            onItemClicked = {
-                                val route =
-                                    Destination.Detail.createRoute(path = it.primaryImageUrl)
-                                navController.navigate(route = route)
-                            }
-                        )
+                    items(
+                        count = museumItems.itemCount,
+                        key = museumItems.itemKey { it.id }
+                    ) {
+                        museumItems[it]?.let {
+                            MuseumItemCard(
+                                museumItem = it,
+                                onItemClicked = {
+                                    val route =
+                                        Destination.Detail.createRoute(path = it.primaryImageUrl)
+                                    navController.navigate(route = route)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -111,28 +123,4 @@ fun MuseumItemCard(museumItem: MuseumItem, modifier: Modifier = Modifier, onItem
             Text(text = museumItem.description)
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MuseumListScreenPreview(navController: NavController ? = null) {
-    val sampleItems = listOf(
-        MuseumItem(
-            id = 1,
-            primaryImageUrl = "",
-            thumbnailUrl = "",
-            dated = "1850",
-            location = "Gallery 1",
-            description = "Sample Item 1"
-        ),
-        MuseumItem(
-            id = 2,
-            primaryImageUrl = "",
-            thumbnailUrl = "",
-            dated = "1920",
-            location = "Gallery 2",
-            description = "Sample Item 2"
-        )
-    )
-    MuseumListScreen(navController = navController!!, museumItems = sampleItems)
 }
