@@ -34,6 +34,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.sree.museum.ui.nav.Destination
 import com.sree.museum.ui.theme.MuseumTheme
 import com.sree.museum.ui.view.MuseumItemDetailScreen
@@ -90,6 +91,7 @@ class MainActivity : ComponentActivity() {
 fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onFetchClick: (String)-> Unit, onSearchClick: () -> Unit = {}) {
     var isSearchOpen by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    val museumItems = viewModel.museumItemsFlow.collectAsLazyPagingItems()
     Scaffold(
         floatingActionButton = {
             if (!isSearchOpen) {
@@ -140,14 +142,14 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                             ) {
                                 MuseumListScreen(
                                     navController = navController,
-                                    museumItems = state.museumItems,
+                                    museumItems = museumItems,
                                     onSearchClicked = onSearchClick
                                 )
                             }
                         } else {
                             MuseumListScreen(
                                 navController = navController,
-                                museumItems = state.museumItems,
+                                museumItems = museumItems,
                                 onSearchClicked = onSearchClick
                             )
                         }
@@ -160,7 +162,7 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                     is MuseumListViewModel.State.Success -> {
                         MuseumListScreen(
                             navController = navController,
-                            museumItems = state.museumItems,
+                            museumItems = viewModel.museumItemsFlow.collectAsLazyPagingItems(),
                             onSearchClicked = onSearchClick
                         )
                     }
