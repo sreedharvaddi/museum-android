@@ -14,7 +14,8 @@ class MuseumPagingSource(
     private val _seenKeys = mutableSetOf<Int>()
 
     override fun getRefreshKey(state: PagingState<Int, MuseumItem>): Int? {
-        _seenKeys.clear()
+        // Do NOT clear _seenKeys — deduplication must persist across the entire
+        // PagingSource lifecycle so items already loaded never re-enter on refresh.
         return state.anchorPosition?.let {
             state.closestPageToPosition(it)?.prevKey?.plus(1)
         }

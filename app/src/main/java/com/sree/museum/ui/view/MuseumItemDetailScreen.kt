@@ -1,5 +1,6 @@
 package com.sree.museum.ui.view
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,6 +90,25 @@ fun PinchZoomAsyncImage(
                     }
                     scale = newScale
                 }
+            }
+            .pointerInput(model) {
+                detectTapGestures(
+                    onDoubleTap = { centroid ->
+                        if (scale >= maxScale) {
+                            // Reset to original scale and pan offset
+                            scale = 1f
+                            offset = Offset.Zero
+                        } else {
+                            // Zoom to max scale centered on the tap point
+                            val newScale = maxScale
+                            val centerX = size.width / 2f
+                            val centerY = size.height / 2f
+                            val focalPoint = centroid - Offset(centerX, centerY)
+                            offset = (Offset.Zero - focalPoint) * (newScale / 1f) + focalPoint
+                            scale = newScale
+                        }
+                    }
+                )
             },
         contentAlignment = Alignment.Center
     ) {

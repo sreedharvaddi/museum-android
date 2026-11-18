@@ -22,6 +22,7 @@ import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,6 +93,7 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
     var isSearchOpen by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val museumItems = viewModel.museumItemsFlow.collectAsLazyPagingItems()
+    val isLoading by viewModel.isLoading.collectAsState()
     Scaffold(
         floatingActionButton = {
             if (!isSearchOpen) {
@@ -143,6 +145,7 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                                 MuseumListScreen(
                                     navController = navController,
                                     museumItems = museumItems,
+                                    isLoadInProgress = isLoading,
                                     onSearchClicked = onSearchClick
                                 )
                             }
@@ -150,6 +153,7 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                             MuseumListScreen(
                                 navController = navController,
                                 museumItems = museumItems,
+                                isLoadInProgress = isLoading,
                                 onSearchClicked = onSearchClick
                             )
                         }
@@ -163,6 +167,7 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                         MuseumListScreen(
                             navController = navController,
                             museumItems = viewModel.museumItemsFlow.collectAsLazyPagingItems(),
+                            isLoadInProgress = isLoading,
                             onSearchClicked = onSearchClick
                         )
                     }

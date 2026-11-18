@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,9 +17,15 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,59 +42,76 @@ import com.sree.museum.ui.nav.Destination
 fun MuseumListScreen(
     navController: NavController,
     museumItems: LazyPagingItems<MuseumItem>,
+    isLoadInProgress: Boolean = false,
     onSearchClicked: () -> Unit = {},
     isGridLayout : Boolean = false
 ) {
+    val hasNoItems by remember { derivedStateOf { museumItems.itemCount == 0 } }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        if (museumItems.itemCount == 0) {
-            Image(
-                painter = painterResource( R.drawable.museum_splash_screen),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize().padding(16.dp)
-                    .align(Alignment.Center)
-            )
-        } else {
-            if (isGridLayout) {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(100.dp),
-                    modifier = Modifier.fillMaxSize()
+        when {
+            hasNoItems && isLoadInProgress -> {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(
-                        count = museumItems.itemCount,
-                        key = museumItems.itemKey { it.id }
-                    ) { index ->
-                        museumItems[index]?.let {
-                            MuseumItemCard(
-                                museumItem = it,
-                                onItemClicked = {
-                                    val route =
-                                        Destination.Detail.createRoute(path = it.primaryImageUrl)
-                                    navController.navigate(route = route)
-                                }
-                            )
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "Loading items...")
+                }
+            }
+
+            hasNoItems -> {
+                Image(
+                    painter = painterResource( R.drawable.museum_splash_screen),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                        .align(Alignment.Center)
+                )
+            }
+            else -> {
+                if (isGridLayout) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(100.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(
+                            count = museumItems.itemCount,
+                            key = museumItems.itemKey { it.id }
+                        ) { index ->
+                            museumItems[index]?.let {
+                                MuseumItemCard(
+                                    museumItem = it,
+                                    onItemClicked = {
+                                        val route =
+                                            Destination.Detail.createRoute(path = it.primaryImageUrl)
+                                        navController.navigate(route = route)
+                                    }
+                                )
+                            }
                         }
                     }
-                }
-            } else {
-                val rememberedLazyListState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = rememberedLazyListState,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(
-                        count = museumItems.itemCount,
-                        key = museumItems.itemKey { it.id }
+                } else {
+                    val rememberedLazyListState = rememberLazyListState()
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = rememberedLazyListState,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        museumItems[it]?.let {
-                            MuseumItemCard(
-                                museumItem = it,
-                                onItemClicked = {
-                                    val route =
-                                        Destination.Detail.createRoute(path = it.primaryImageUrl)
-                                    navController.navigate(route = route)
-                                }
-                            )
+                        items(
+                            count = museumItems.itemCount,
+                            key = museumItems.itemKey { it.id }
+                        ) {
+                            museumItems[it]?.let {
+                                MuseumItemCard(
+                                    museumItem = it,
+                                    onItemClicked = {
+                                        val route =
+                                            Destination.Detail.createRoute(path = it.primaryImageUrl)
+                                        navController.navigate(route = route)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
