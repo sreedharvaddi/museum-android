@@ -22,6 +22,7 @@ import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.sree.museum.ui.nav.Destination
 import com.sree.museum.ui.theme.MuseumTheme
 import com.sree.museum.ui.view.MuseumItemDetailScreen
@@ -90,6 +92,8 @@ class MainActivity : ComponentActivity() {
 fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onFetchClick: (String)-> Unit, onSearchClick: () -> Unit = {}) {
     var isSearchOpen by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    val museumItems = viewModel.museumItemsFlow.collectAsLazyPagingItems()
+    val isLoading by viewModel.isLoading.collectAsState()
     Scaffold(
         floatingActionButton = {
             if (!isSearchOpen) {
@@ -140,14 +144,16 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                             ) {
                                 MuseumListScreen(
                                     navController = navController,
-                                    museumItems = state.museumItems,
+                                    museumItems = museumItems,
+                                    isLoadInProgress = isLoading,
                                     onSearchClicked = onSearchClick
                                 )
                             }
                         } else {
                             MuseumListScreen(
                                 navController = navController,
-                                museumItems = state.museumItems,
+                                museumItems = museumItems,
+                                isLoadInProgress = isLoading,
                                 onSearchClicked = onSearchClick
                             )
                         }
@@ -160,7 +166,8 @@ fun HomeScreen(navController: NavController, viewModel: MuseumListViewModel, onF
                     is MuseumListViewModel.State.Success -> {
                         MuseumListScreen(
                             navController = navController,
-                            museumItems = state.museumItems,
+                            museumItems = viewModel.museumItemsFlow.collectAsLazyPagingItems(),
+                            isLoadInProgress = isLoading,
                             onSearchClicked = onSearchClick
                         )
                     }

@@ -1,11 +1,15 @@
 package com.sree.museum.data
 
 import android.util.Log
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.sree.museum.data.api.MuseumApi
 import com.sree.museum.data.api.MuseumItemSearchApi
 import com.sree.museum.data.api.model.toDomain
 import com.sree.museum.domain.MuseumRepo
 import com.sree.museum.domain.model.MuseumItem
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,7 +21,10 @@ class MuseumRepoImpl @Inject constructor(
 
     private val TAG = "MuseumRepoImpl"
     override suspend fun fetchMuseumItems(query: String, page: Int): List<MuseumItem> {
-        return museumItemSearchApi.search(query, offset = page, limit = 20).objectIDs.mapNotNull { objectId ->
+        val offset = (page - 1) * 20
+        // Deduplicate objectIDs to prevent duplicate keys in Compose LazyList
+        val uniqueIds = museumItemSearchApi.search(query, offset = offset, limit = 20).objectIDs.distinct()
+        return uniqueIds.mapNotNull { objectId ->
             Log.d(TAG, "Fetching item with ID: $objectId")
             try {
                 val museumItem = museumApi.getMuseumItemById(objectId).toDomain()
@@ -31,56 +38,15 @@ class MuseumRepoImpl @Inject constructor(
         }.filter { it.thumbnailUrl.isNotEmpty() }
     }
 
-    private fun stubData() : List<MuseumItem> {
-        return listOf(
-            MuseumItem(
-                id = 1,
-                primaryImageUrl =  "https://images.metmuseum.org/CRDImages/ad/original/DP208427.jpg",
-                thumbnailUrl = "https://images.metmuseum.org/CRDImages/ad/web-large/DP208427.jpg",
-                dated = "1976",
-                location = "New York City",
-                ""
+    override fun getMuseumItemsFlow(query: String): Flow<PagingData<MuseumItem>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                initialLoadSize = 20
             ),
-            MuseumItem(
-                id = 2,
-                primaryImageUrl =  "https://images.metmuseum.org/CRDImages/ad/original/DP208427.jpg",
-                thumbnailUrl = "https://images.metmuseum.org/CRDImages/ad/web-large/DP208427.jpg",
-                dated = "1976",
-                location = "New York City",
-                ""
-            ),
-            MuseumItem(
-                id = 3,
-                primaryImageUrl =  "https://images.metmuseum.org/CRDImages/ad/original/DP208427.jpg",
-                thumbnailUrl = "https://images.metmuseum.org/CRDImages/ad/web-large/DP208427.jpg",
-                dated = "1976",
-                location = "New York City",
-                ""
-            ),
-            MuseumItem(
-                id = 13456,
-                primaryImageUrl =  "https://images.metmuseum.org/CRDImages/ad/original/DP208427.jpg",
-                thumbnailUrl = "https://images.metmuseum.org/CRDImages/ad/web-large/DP208427.jpg",
-                dated = "1976",
-                location = "New York City",
-                ""
-            ),
-            MuseumItem(
-                id = 13456,
-                primaryImageUrl =  "https://images.metmuseum.org/CRDImages/ad/original/DP208427.jpg",
-                thumbnailUrl = "https://images.metmuseum.org/CRDImages/ad/web-large/DP208427.jpg",
-                dated = "1976",
-                location = "New York City",
-                ""
-            ),
-            MuseumItem(
-                id = 13456,
-                primaryImageUrl =  "https://images.metmuseum.org/CRDImages/ad/original/DP208427.jpg",
-                thumbnailUrl = "https://images.metmuseum.org/CRDImages/ad/web-large/DP208427.jpg",
-                dated = "1976",
-                location = "New York City",
-                ""
-            ),
-        )
+            pagingSourceFactory = { MuseumPagingSource(this, query = query) }
+        ).flow
     }
+
+
 }
